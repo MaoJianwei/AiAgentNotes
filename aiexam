@@ -1,0 +1,98 @@
+
+
+def judge(tree, obj):
+
+    current_node = 1
+    while True:
+        left, right, cha_pos, threshold, label = tree[current_node]
+
+        if (cha_pos == 0 and threshold == 0) or (left == 0 and right == 0):
+            return label
+
+        if obj[cha_pos-1] <= threshold:
+            current_node = left
+            continue
+        current_node = right
+
+def calculate_new_F1(tree, verify):
+    TP = 0
+    FP = 0
+    FN = 0
+    TN = 0
+
+    # 假设 1 为阳， 0 为阴
+    for v in verify:
+        result = judge(tree, v)
+        if v[-1] == 1:
+            if result == 1:
+                TP += 1
+                continue
+            FN += 1
+            continue
+
+        if result == 1:
+            FP += 1
+            continue
+        TN += 1
+
+    try:
+        Precision = TP / (TP + FP)
+        Recall = TP / (TP + FN)
+
+        F1 = 2 * Precision * Recall / (Precision + Recall)
+    except ZeroDivisionError:
+        F1 = 0
+    return F1
+
+
+def jianzhi(tree, current_node, verify):
+
+    max = 0
+    if tree[current_node][0] == 0:
+        # 我是叶子，没法剪
+        return max # F1
+
+    F1_left = jianzhi(tree, tree[current_node][0], verify)
+    F1_right = jianzhi(tree, tree[current_node][1], verify)
+
+    old_info = tree[current_node]
+    tree[current_node] = (0, 0, 0, 0, old_info[-1])
+    F1_me = calculate_new_F1(tree, verify)
+    tree[current_node] = old_info # 还原这棵树
+
+    max = F1_left if F1_left > F1_right else F1_right
+    max = F1_me if F1_me > max else max
+
+    print(f"node: {current_node} - F1_left {F1_left} - F1_right {F1_right} - F1_me {F1_me}")
+
+    return max
+
+
+def main():
+
+    tree = {}
+    verify = []
+
+    node_count, verify_count, character_count = map(int, input().strip().split())
+
+    for i in range(node_count):
+        left, right, cha_pos, threshold, label = map(int, input().strip().split())
+        tree[i+1] = (left, right, cha_pos, threshold, label)
+
+    for i in range(verify_count):
+        characters_label = list(map(int, input().strip().split()))
+        verify.append(characters_label)
+
+    F1_origin = calculate_new_F1(tree, verify)
+
+    F1_after = jianzhi(tree, 1, verify)
+
+    print('{:.6f}'.format(F1_origin))
+    print('{:.6f}'.format(F1_after))
+
+
+
+
+
+if __name__ == "__main__":
+    main()
